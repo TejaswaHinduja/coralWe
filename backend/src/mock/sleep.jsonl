@@ -28,3 +28,6 @@
 {"date":"2026-05-26","hours":5.5,"quality":"poor","bedtime":"01:45","wakeup":"07:15","restless":true}
 {"date":"2026-05-27","hours":5.3,"quality":"poor","bedtime":"02:00","wakeup":"07:18","restless":true}
 {"date":"2026-05-28","hours":5.2,"quality":"poor","bedtime":"02:15","wakeup":"07:27","restless":true}
+{"date":"2026-05-29","hours":5.0,"quality":"poor","bedtime":"02:30","wakeup":"07:30","restless":true}
+{"date":"2026-05-30","hours":6.0,"quality":"poor","bedtime":"00:30","wakeup":"06:30","restless":true}
+{"date":"2026-05-31","hours":6.3,"quality":"poor","bedtime":"00:00","wakeup":"06:18","restless":true}

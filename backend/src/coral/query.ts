@@ -122,10 +122,17 @@ function groupByDate<T extends { date: string }>(records: T[]): Map<string, T[]>
 
 export function computeMetrics(): BehavioralMetrics {
   const sleep = loadTable<SleepRecord>('sleep').sort((a, b) => a.date.localeCompare(b.date))
-  const useCoralCalendar = isCoralSourceActive('google_calendar')
-  const meetings: MeetingRecord[] = useCoralCalendar
-    ? fetchCalendarMeetings(30).sort((a, b) => a.date.localeCompare(b.date))
-    : loadTable<MeetingRecord>('meetings').sort((a, b) => a.date.localeCompare(b.date))
+  let meetings: MeetingRecord[]
+  if (isCoralSourceActive('google_calendar')) {
+    try {
+      meetings = fetchCalendarMeetings(30).sort((a, b) => a.date.localeCompare(b.date))
+    } catch {
+      // Auth expired or credential issue — fall back to mock data
+      meetings = loadTable<MeetingRecord>('meetings').sort((a, b) => a.date.localeCompare(b.date))
+    }
+  } else {
+    meetings = loadTable<MeetingRecord>('meetings').sort((a, b) => a.date.localeCompare(b.date))
+  }
   const interruptions = loadTable<InterruptionRecord>('interruptions').sort((a, b) => a.date.localeCompare(b.date))
   const productivity = loadTable<ProductivityRecord>('productivity').sort((a, b) => a.date.localeCompare(b.date))
 

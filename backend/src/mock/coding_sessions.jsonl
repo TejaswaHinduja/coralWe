@@ -44,3 +44,8 @@
 {"date":"2026-05-27","repo":"payments-service","start":"22:30","end":"02:00","hours":3.5,"late_night":true}
 {"date":"2026-05-28","repo":"frontend","start":"09:30","end":"12:00","hours":2.5,"late_night":false}
 {"date":"2026-05-28","repo":"auth-service","start":"23:00","end":"02:15","hours":3.25,"late_night":true}
+{"date":"2026-05-29","repo":"payments-service","start":"09:30","end":"12:00","hours":2.5,"late_night":false}
+{"date":"2026-05-29","repo":"frontend","start":"23:00","end":"02:30","hours":3.5,"late_night":true}
+{"date":"2026-05-30","repo":"auth-service","start":"10:00","end":"13:30","hours":3.5,"late_night":false}
+{"date":"2026-05-30","repo":"payments-service","start":"20:00","end":"22:00","hours":2.0,"late_night":false}
+{"date":"2026-05-31","repo":"api-gateway","start":"11:00","end":"14:30","hours":3.5,"late_night":false}

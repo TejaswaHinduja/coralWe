@@ -25,3 +25,6 @@
 {"date":"2026-05-26","commits":3,"repos":["api-gateway","frontend","payments-service"],"prs_opened":0,"prs_reviewed":1,"lines_added":145,"lines_deleted":45}
 {"date":"2026-05-27","commits":4,"repos":["auth-service","payments-service","api-gateway","frontend"],"prs_opened":1,"prs_reviewed":1,"lines_added":168,"lines_deleted":55}
 {"date":"2026-05-28","commits":3,"repos":["frontend","auth-service","payments-service"],"prs_opened":0,"prs_reviewed":1,"lines_added":138,"lines_deleted":42}
+{"date":"2026-05-29","commits":3,"repos":["payments-service","frontend","api-gateway"],"prs_opened":1,"prs_reviewed":0,"lines_added":142,"lines_deleted":38}
+{"date":"2026-05-30","commits":3,"repos":["auth-service","payments-service"],"prs_opened":0,"prs_reviewed":0,"lines_added":125,"lines_deleted":30}
+{"date":"2026-05-31","commits":2,"repos":["api-gateway"],"prs_opened":0,"prs_reviewed":1,"lines_added":98,"lines_deleted":22}
