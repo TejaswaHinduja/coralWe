@@ -25,8 +25,9 @@ export function fetchCalendarMeetings(days = 30): CalendarDayMeetings[] {
       CAST(start_date_time AS DATE)                                           AS date,
       COUNT(*)                                                                AS count,
       SUM(
-        (epoch(CAST(end_date_time AS TIMESTAMP)) -
-         epoch(CAST(start_date_time AS TIMESTAMP))) / 3600.0
+        EXTRACT(EPOCH FROM (
+          CAST(end_date_time AS TIMESTAMP) - CAST(start_date_time AS TIMESTAMP)
+        )) / 3600.0
       )                                                                       AS total_hours,
       ARRAY_AGG(DISTINCT COALESCE(summary, 'Untitled'))                      AS types
     FROM google_calendar.events

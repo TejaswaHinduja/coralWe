@@ -1,8 +1,11 @@
 {
-  "name": "backend",
+  "name": "xetroc",
   "version": "1.0.0",
-  "description": "",
+  "description": "AI Behavioral Intelligence for Developers",
   "main": "index.js",
+  "bin": {
+    "xetroc": "./bin/xetroc.js"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/src/index.js",
