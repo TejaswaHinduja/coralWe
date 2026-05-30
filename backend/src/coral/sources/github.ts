@@ -19,15 +19,29 @@ export interface CodingSession {
   late_night: boolean
 }
 
-// Confirmed column names from:
-//   coral sql "SELECT column_name FROM coral.columns WHERE schema_name='github' AND table_name='commits'"
-// Key columns: commit__author__date, repo, owner, stats__additions, stats__deletions, author__login
+// Confirmed columns from coral.columns WHERE schema_name='github' AND table_name='commits':
+//   commit__author__date, repo, owner, stats__additions, stats__deletions, author__login
+//
+// github.commits requires WHERE owner = <constant> (the GitHub account login).
+// We auto-detect it from github.user; override with GITHUB_USERNAME in .env.
+
+function getOwner(): string {
+  const fromEnv = process.env['GITHUB_USERNAME']
+  if (fromEnv) return fromEnv
+
+  const rows = coralQuery<{ login: string }>('SELECT login FROM github.user')
+  const login = rows[0]?.login
+  if (!login) throw new Error('Could not detect GitHub username. Set GITHUB_USERNAME in .env.')
+  return login
+}
 
 export function fetchGithubActivity(days = 30): GithubDayActivity[] {
+  const owner = getOwner()
+
   const commitRows = coralQuery<{
     date: string
     commits: number
-    repos: string       // ARRAY_AGG returns JSON string from Coral
+    repos: string
     lines_added: number
     lines_deleted: number
   }>(`
@@ -38,22 +52,29 @@ export function fetchGithubActivity(days = 30): GithubDayActivity[] {
       SUM(COALESCE(stats__additions, 0))   AS lines_added,
       SUM(COALESCE(stats__deletions, 0))   AS lines_deleted
     FROM github.commits
-    WHERE commit__author__date >= NOW() - INTERVAL '${days} days'
+    WHERE owner = '${owner}'
+      AND commit__author__date >= NOW() - INTERVAL '${days} days'
     GROUP BY CAST(commit__author__date AS DATE)
     ORDER BY date ASC
   `)
 
-  const prRows = coralQuery<{ date: string; prs_opened: number }>(`
-    SELECT
-      CAST(created_at AS DATE) AS date,
-      COUNT(*)                 AS prs_opened
-    FROM github.pulls
-    WHERE created_at >= NOW() - INTERVAL '${days} days'
-    GROUP BY CAST(created_at AS DATE)
-    ORDER BY date ASC
-  `)
-
-  const prsByDate = new Map(prRows.map(r => [r.date, r.prs_opened]))
+  // Pulls may require owner + repo — attempt it, skip gracefully if it fails
+  const prsByDate = new Map<string, number>()
+  try {
+    const prRows = coralQuery<{ date: string; prs_opened: number }>(`
+      SELECT
+        CAST(created_at AS DATE) AS date,
+        COUNT(*)                 AS prs_opened
+      FROM github.pulls
+      WHERE owner = '${owner}'
+        AND created_at >= NOW() - INTERVAL '${days} days'
+      GROUP BY CAST(created_at AS DATE)
+      ORDER BY date ASC
+    `)
+    for (const r of prRows) prsByDate.set(r.date, r.prs_opened)
+  } catch {
+    // pulls may require a repo filter too — fall through with 0 counts
+  }
 
   return commitRows.map(row => ({
     date: row.date,
@@ -67,8 +88,8 @@ export function fetchGithubActivity(days = 30): GithubDayActivity[] {
 }
 
 export function fetchCodingSessions(days = 30): CodingSession[] {
-  // Approximate sessions as "all commits to the same repo on the same day".
-  // First/last commit timestamp = session boundaries.
+  const owner = getOwner()
+
   const rows = coralQuery<{
     date: string
     repo: string
@@ -83,7 +104,8 @@ export function fetchCodingSessions(days = 30): CodingSession[] {
       MAX(commit__author__date)          AS session_end,
       COUNT(*)                           AS commit_count
     FROM github.commits
-    WHERE commit__author__date >= NOW() - INTERVAL '${days} days'
+    WHERE owner = '${owner}'
+      AND commit__author__date >= NOW() - INTERVAL '${days} days'
     GROUP BY CAST(commit__author__date AS DATE), repo
     ORDER BY date, session_start ASC
   `)
@@ -91,7 +113,6 @@ export function fetchCodingSessions(days = 30): CodingSession[] {
   return rows.map(row => {
     const start = new Date(row.session_start)
     const end = new Date(row.session_end)
-    // Minimum 15-min session even for a single commit
     const hours = Math.max(0.25, (end.getTime() - start.getTime()) / 3_600_000)
     const startHour = start.getHours()
     return {

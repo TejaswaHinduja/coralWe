@@ -86,6 +86,7 @@ export interface BehavioralMetrics {
     avgDeepWorkHours_recent: number
     avgTasksAdded_recent: number
     avgTasksCompleted_recent: number
+    recentScores: Array<{ date: string; score: number; deepWorkHours: number }>
   }
   burnout: {
     score: number
@@ -137,13 +138,20 @@ export function computeMetrics(): BehavioralMetrics {
   const productivity = loadTable<ProductivityRecord>('productivity').sort((a, b) => a.date.localeCompare(b.date))
 
   // Use live Coral data for GitHub if the source is connected; fall back to mock JSONL
-  const useCoralGithub = isCoralSourceActive('github')
-  const github: GithubRecord[] = useCoralGithub
-    ? fetchGithubActivity(30).sort((a, b) => a.date.localeCompare(b.date))
-    : loadTable<GithubRecord>('github_activity').sort((a, b) => a.date.localeCompare(b.date))
-  const coding: CodingSession[] = useCoralGithub
-    ? fetchCodingSessions(30)
-    : loadTable<CodingSession>('coding_sessions')
+  let github: GithubRecord[]
+  let coding: CodingSession[]
+  if (isCoralSourceActive('github')) {
+    try {
+      github = fetchGithubActivity(30).sort((a, b) => a.date.localeCompare(b.date))
+      coding = fetchCodingSessions(30)
+    } catch {
+      github = loadTable<GithubRecord>('github_activity').sort((a, b) => a.date.localeCompare(b.date))
+      coding = loadTable<CodingSession>('coding_sessions')
+    }
+  } else {
+    github = loadTable<GithubRecord>('github_activity').sort((a, b) => a.date.localeCompare(b.date))
+    coding = loadTable<CodingSession>('coding_sessions')
+  }
 
   // Time windows
   const sleepLast7 = sleep.slice(-7)
@@ -268,6 +276,11 @@ export function computeMetrics(): BehavioralMetrics {
       avgDeepWorkHours_recent: Math.round(avgDeepWorkHours_recent * 10) / 10,
       avgTasksAdded_recent: Math.round(avgTasksAdded_recent * 10) / 10,
       avgTasksCompleted_recent: Math.round(avgTasksCompleted_recent * 10) / 10,
+      recentScores: prodLast7.map(d => ({
+        date: d.date,
+        score: d.score,
+        deepWorkHours: d.deep_work_hours,
+      })),
     },
     burnout: {
       score: burnoutScore,
