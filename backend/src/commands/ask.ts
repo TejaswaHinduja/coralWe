@@ -43,52 +43,62 @@ export async function askCommand(question: string): Promise<void> {
 
   const colorFn = BURNOUT_COLORS[metrics.burnout.level]
 
+  // Burnout ring — shown at the top before AI analysis
   console.log('  ' + chalk.bold('BURNOUT RISK') + chalk.dim('  ─────────────────────────────────'))
   console.log()
   renderBurnoutRing(metrics.burnout.score, metrics.burnout.level, colorFn)
+  console.log()
+  console.log(chalk.dim('  ────────────────────────────────────────────────────'))
+  console.log()
+
+  // AI analysis
+  printFormattedResponse(response)
+
+  // Productivity bars — at the bottom as a detailed data view
+  console.log()
+  console.log(chalk.dim('  ────────────────────────────────────────────────────'))
   console.log()
   console.log('  ' + chalk.bold('PRODUCTIVITY') + chalk.dim('  last 7 days  ───────────────────'))
   console.log()
   renderProductivityBars(metrics.productivity.recentScores)
   console.log()
-  console.log(chalk.dim('  ────────────────────────────────────────────────────'))
-  console.log()
-
-  printFormattedResponse(response)
-  console.log()
 }
 
-// 16-segment ring, fills clockwise from top-left.
-// Segments: 0-4 = top, 5-7 = right, 8-12 = bottom (right→left), 13-15 = left (bottom→top)
+// 30-segment half-block ring, fills clockwise from top-left.
+// ▘▀…▀▝ = top arc   ▌/▐ = left/right sides   ▗▄…▄▖ = bottom arc
+// Segment map:  0=▘  1–11=▀  12=▝  13–14=▐  15=▖  16–26=▄  27=▗  28–29=▌
 function renderBurnoutRing(score: number, level: string, colorFn: typeof chalk): void {
-  const N = 16
+  const N = 30
   const filled = Math.round((score / 100) * N)
-  const d = (i: number): string => i < filled ? colorFn('●') : chalk.dim('○')
+  const ringFn = level === 'critical' ? chalk.red : colorFn
+  const seg = (i: number, ch: string): string => i < filled ? ringFn(ch) : chalk.dim(ch)
 
   const W = 11
   const scoreStr = `${score}/100`
-  const sPadL = Math.floor((W - scoreStr.length) / 2)
-  const sPadR = W - scoreStr.length - sPadL
-  const scoreText = ' '.repeat(sPadL) + scoreStr + ' '.repeat(sPadR)
+  const sp = Math.max(0, W - scoreStr.length)
+  const scoreText = ' '.repeat(Math.floor(sp / 2)) + scoreStr + ' '.repeat(Math.ceil(sp / 2))
 
   const lvl = level.toUpperCase()
-  const lPadL = Math.floor((W - lvl.length) / 2)
-  const lPadR = W - lvl.length - lPadL
-  const levelText = ' '.repeat(lPadL) + colorFn(lvl) + ' '.repeat(lPadR)
+  const lp = Math.floor((W - lvl.length) / 2)
+  const levelText = ' '.repeat(lp) + colorFn(lvl) + ' '.repeat(W - lvl.length - lp)
+
+  const topRow = seg(0, '▘') + [1,2,3,4,5,6,7,8,9,10,11].map(i => seg(i, '▀')).join('') + seg(12, '▝')
+  const midRow1 = seg(29, '▌') + scoreText + seg(13, '▐')
+  const midRow2 = seg(28, '▌') + levelText + seg(14, '▐')
+  const botRow = seg(27, '▗') + [26,25,24,23,22,21,20,19,18,17,16].map(i => seg(i, '▄')).join('') + seg(15, '▖')
 
   const P = '  '
-  console.log(P + `    ${d(0)} ${d(1)} ${d(2)} ${d(3)} ${d(4)}    `)
-  console.log(P + `  ${d(15)}           ${d(5)}  `)
-  console.log(P + `  ${d(14)}${scoreText}${d(6)}  `)
-  console.log(P + `  ${d(13)}${levelText}${d(7)}  `)
-  console.log(P + `    ${d(12)} ${d(11)} ${d(10)} ${d(9)} ${d(8)}    `)
+  console.log(P + topRow)
+  console.log(P + midRow1)
+  console.log(P + midRow2)
+  console.log(P + botRow)
 }
 
 function renderProductivityBars(
   recentScores: Array<{ date: string; score: number; deepWorkHours: number }>
 ): void {
   const BAR_WIDTH = 18
-  const MONTHS = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const MONTHS = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
   for (let i = 0; i < recentScores.length; i++) {
     const day = recentScores[i]!

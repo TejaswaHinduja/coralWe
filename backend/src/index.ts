@@ -13,7 +13,7 @@ program
   .argument('<question>', 'Natural language question')
   .action(askCommand)
 
-// Bare usage: xetroc why am I burned out?  (no "ask" subcommand needed)
+
 program
   .arguments('[question...]')
   .action(async (words: string[]) => {
